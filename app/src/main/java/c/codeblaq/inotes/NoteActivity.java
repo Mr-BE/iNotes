@@ -2,12 +2,9 @@ package c.codeblaq.inotes;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
-import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.ArrayAdapter;
@@ -19,10 +16,11 @@ import java.util.List;
 public class NoteActivity extends AppCompatActivity {
 
     //Constant for NoteInfo extra (use package name to make it unique)
-    public static final String NOTE_INFO = "c.codeblaq.inotes.NOTE_POSITION";
+    public static final String NOTE_POSITION = "c.codeblaq.inotes.NOTE_POSITION";
+    public static final int POSITION_NOT_SET = -1;
 
     private NoteInfo mNote;
-    private boolean isNewNote;
+    private boolean mIsNewNote;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,7 +49,7 @@ public class NoteActivity extends AppCompatActivity {
         EditText textNoteText = findViewById(R.id.text_note_text);
 
         //display spinners and editTexts (Notes contents)
-        if (!isNewNote){//No need for saved content
+        if (!mIsNewNote){//No need for saved content
             displayNote(spinnerCourses, textNoteTitle, textNoteText);
         }
     }
@@ -78,9 +76,18 @@ public class NoteActivity extends AppCompatActivity {
     private void readDisplayValues() {
         //retrieve intent passed to this activity
         Intent intent = getIntent();
-        mNote = intent.getParcelableExtra(NOTE_INFO);
-        //Check if a new note is being created
-        isNewNote = mNote == null;
+        //get int position
+
+        /*The param "POSITION_NOT_SET =-1" */
+//  When using value types and not reference types for intent extras, two params need to be provided. If a reference type was used, it could easily return null but for a value type, this needs to be specified if there's no extra with the specified name
+        int position = intent.getIntExtra(NOTE_POSITION, POSITION_NOT_SET);
+
+        //Check if a new note is being created based on the availability of a position value
+        mIsNewNote = position == POSITION_NOT_SET;
+        if (!mIsNewNote){ //Note has a position already (not a new note)
+            //Get Data Manager Instance to provide content at given positions
+            mNote = DataManager.getInstance().getNotes().get(position);
+        }
     }
 
     @Override
