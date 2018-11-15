@@ -21,6 +21,9 @@ public class NoteActivity extends AppCompatActivity {
 
     private NoteInfo mNote;
     private boolean mIsNewNote;
+    private Spinner mSpinnerCourses;
+    private EditText mTextNoteTitle;
+    private EditText mTextNoteText;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -30,7 +33,7 @@ public class NoteActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
 
         //Instantiate spinner
-        Spinner spinnerCourses = findViewById(R.id.spinner_courses);
+        mSpinnerCourses = findViewById(R.id.spinner_courses);
         //Get list for spinner
         List<CourseInfo> courses = DataManager.getInstance().getCourses();
         //Create adapter for  spinner list
@@ -39,18 +42,18 @@ public class NoteActivity extends AppCompatActivity {
         //Drop down for list of courses
         adapterCourses.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         //Associate adapter with spinner
-        spinnerCourses.setAdapter(adapterCourses);
+        mSpinnerCourses.setAdapter(adapterCourses);
         
         //Read values from intent
         readDisplayValues();
 
         //Reference editText fields for the notes
-        EditText textNoteTitle = findViewById(R.id.text_note_title);
-        EditText textNoteText = findViewById(R.id.text_note_text);
+        mTextNoteTitle = findViewById(R.id.text_note_title);
+        mTextNoteText = findViewById(R.id.text_note_text);
 
         //display spinners and editTexts (Notes contents)
         if (!mIsNewNote){//No need for saved content
-            displayNote(spinnerCourses, textNoteTitle, textNoteText);
+            displayNote(mSpinnerCourses, mTextNoteTitle, mTextNoteText);
         }
     }
 
@@ -97,6 +100,7 @@ public class NoteActivity extends AppCompatActivity {
         return true;
     }
 
+    /*Handles menu option*/
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         // Handle action bar item clicks here. The action bar will
@@ -105,10 +109,29 @@ public class NoteActivity extends AppCompatActivity {
         int id = item.getItemId();
 
         //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
+        if (id == R.id.action_send_mail) {
+            sendEmail();
             return true;
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    //Send a mail via implicit intent
+    private void sendEmail() {
+        //Get course info from spinner
+        CourseInfo course = (CourseInfo) mSpinnerCourses.getSelectedItem();
+        //Email subject from note title
+        String subject = mTextNoteTitle.getText().toString();
+        //email body text
+        String text = "Check out this course \""+
+                course.getTitle() +"\"\n" + mTextNoteText.getText().toString();
+    //Create intent
+        Intent intent = new Intent(Intent.ACTION_SEND);
+        intent.setType("message/rfc2822"); //Email MIME TYPE
+        intent.putExtra(Intent.EXTRA_SUBJECT, subject); //Email subject
+        intent.putExtra(Intent.EXTRA_TEXT,text); //Email body
+
+        startActivity(intent);
     }
 }
