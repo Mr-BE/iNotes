@@ -26,6 +26,9 @@ public class NoteActivity extends AppCompatActivity {
     private EditText mTextNoteText;
     private int mNotePosition;
     private boolean mIsCancelling;
+    private String mOriginalNoteCourseId;
+    private String mOriginalNoteTitle;
+    private String mOriginalNoteText;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,19 +48,38 @@ public class NoteActivity extends AppCompatActivity {
         adapterCourses.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         //Associate adapter with spinner
         mSpinnerCourses.setAdapter(adapterCourses);
-        
+
         //Read values from intent
         readDisplayValues();
+
+        //Save original note input
+        saveOriginalNoteValues();
 
         //Reference editText fields for the notes
         mTextNoteTitle = findViewById(R.id.text_note_title);
         mTextNoteText = findViewById(R.id.text_note_text);
 
         //display spinners and editTexts (Notes contents)
-        if (!mIsNewNote){//No need for saved content
+        if (!mIsNewNote) {//No need for saved content
             displayNote(mSpinnerCourses, mTextNoteTitle, mTextNoteText);
         }
     }
+
+    /** Save what was originally in the note*/
+    private void saveOriginalNoteValues() {
+        if (mIsNewNote)
+            return;
+
+            //original course ID of the altered note
+            mOriginalNoteCourseId = mNote.getCourse().getCourseId();
+
+            //original title of the altered note
+            mOriginalNoteTitle = mNote.getTitle();
+
+            //original text of the altered note
+            mOriginalNoteText = mNote.getText();
+        }
+
 
     //When User leaves current activity
     @Override
@@ -67,12 +89,21 @@ public class NoteActivity extends AppCompatActivity {
             //Get DataManager instance and remove note if new note
             if(mIsNewNote) {
                 DataManager.getInstance().removeNote(mNotePosition);
+            } else {
+                storePreviousNotesValues();
             }
         }
         else{
             saveNote();
         }
 
+    }
+    //Store note's previous values
+    private void storePreviousNotesValues() {
+        CourseInfo course = DataManager.getInstance().getCourse(mOriginalNoteCourseId);
+        mNote.setCourse(course);
+        mNote.setTitle(mOriginalNoteTitle);
+        mNote.setText(mOriginalNoteText);
     }
 
     //Save note input
@@ -102,7 +133,7 @@ public class NoteActivity extends AppCompatActivity {
 
     }
 
-    /*Get values for notes to be displayed*/
+    /**Get values for notes to be displayed*/
     //Populates created notes with their content
     private void readDisplayValues() {
         //retrieve intent passed to this activity
