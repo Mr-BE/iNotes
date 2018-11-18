@@ -24,6 +24,8 @@ public class NoteActivity extends AppCompatActivity {
     private Spinner mSpinnerCourses;
     private EditText mTextNoteTitle;
     private EditText mTextNoteText;
+    private int mNotePosition;
+    private boolean mIsCancelling;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -57,6 +59,32 @@ public class NoteActivity extends AppCompatActivity {
         }
     }
 
+    //When User leaves current activity
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if (mIsCancelling){//User cancelling created note
+            //Get DataManager instance and remove note if new note
+            if(mIsNewNote) {
+                DataManager.getInstance().removeNote(mNotePosition);
+            }
+        }
+        else{
+            saveNote();
+        }
+
+    }
+
+    //Save note input
+    private void saveNote() {
+        //Set course value to what is in spinner
+        mNote.setCourse((CourseInfo) mSpinnerCourses.getSelectedItem());
+        //Get value of note title and set to title field
+        mNote.setTitle(mTextNoteTitle.getText().toString());
+        //Get value of note text and set to title field
+        mNote.setText(mTextNoteText.getText().toString());
+    }
+
     private void displayNote(Spinner spinnerCourses, EditText textNoteTitle, EditText textNoteText) {
         //Get course list from data manager
         List<CourseInfo> courses = DataManager.getInstance().getCourses();
@@ -87,10 +115,22 @@ public class NoteActivity extends AppCompatActivity {
 
         //Check if a new note is being created based on the availability of a position value
         mIsNewNote = position == POSITION_NOT_SET;
-        if (!mIsNewNote){ //Note has a position already (not a new note)
+        if (mIsNewNote) { //New note created
+            createNewNote();
+
+        }else {
+            //Note has a position already (not a new note)
             //Get Data Manager Instance to provide content at given positions
             mNote = DataManager.getInstance().getNotes().get(position);
         }
+    }
+    /*Method for handling creation of new notes */
+    private void createNewNote() {
+        DataManager dm = DataManager.getInstance(); //Local instance of DataManager
+        //Call Data Manager's "createNewNote" feature and get position
+        mNotePosition = dm.createNewNote();
+        //Get note at position and assign to "mNote"
+        mNote = dm.getNotes().get(mNotePosition);
     }
 
     @Override
@@ -112,6 +152,13 @@ public class NoteActivity extends AppCompatActivity {
         if (id == R.id.action_send_mail) {
             sendEmail();
             return true;
+        }
+        //Cancel note
+        else if (id == R.id.action_cancel){
+            //set flag when user cancels
+            mIsCancelling = true;
+            //end operations
+            finish();
         }
 
         return super.onOptionsItemSelected(item);
