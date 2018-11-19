@@ -2,6 +2,7 @@ package c.codeblaq.inotes;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.PersistableBundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
@@ -17,6 +18,11 @@ public class NoteActivity extends AppCompatActivity {
 
     //Constant for NoteInfo extra (use package name to make it unique)
     public static final String NOTE_POSITION = "c.codeblaq.inotes.NOTE_POSITION";
+   /*Constant values for original note states */
+    public static final String ORIGINAL_NOTE_COURSE_ID = "c.codeblaq.inotes.ORIGINAL_NOTE_COURSE_ID";
+    public static final String ORIGINAL_NOTE_TITLE = "c.codeblaq.inotes.ORIGINAL_NOTE_TITLE";
+    public static final String ORIGINAL_NOTE_TEXT = "c.codeblaq.inoes.ORIGINAL_NOTE_TEXT";
+
     public static final int POSITION_NOT_SET = -1;
 
     private NoteInfo mNote;
@@ -53,7 +59,12 @@ public class NoteActivity extends AppCompatActivity {
         readDisplayValues();
 
         //Save original note input
-        saveOriginalNoteValues();
+       if (savedInstanceState == null){ // opened for the first time
+           saveOriginalNoteValues();
+       } else{ //recreated activity
+           restoreOriginalNoteValues(savedInstanceState);
+       }
+
 
         //Reference editText fields for the notes
         mTextNoteTitle = findViewById(R.id.text_note_title);
@@ -63,6 +74,13 @@ public class NoteActivity extends AppCompatActivity {
         if (!mIsNewNote) {//No need for saved content
             displayNote(mSpinnerCourses, mTextNoteTitle, mTextNoteText);
         }
+    }
+    /**Called when to repopulate activity with original values when recreated*/
+    private void restoreOriginalNoteValues(Bundle savedInstanceState) {
+        //Retrieve original state values
+        mOriginalNoteCourseId = savedInstanceState.getString(ORIGINAL_NOTE_COURSE_ID);
+        mOriginalNoteTitle = savedInstanceState.getString(ORIGINAL_NOTE_TITLE);
+        mOriginalNoteText = savedInstanceState.getString(ORIGINAL_NOTE_TEXT);
     }
 
     /** Save what was originally in the note*/
@@ -96,8 +114,20 @@ public class NoteActivity extends AppCompatActivity {
         else{
             saveNote();
         }
-
     }
+
+    /*Make sure cancelled state is saved*/
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        //save course id
+        outState.putString(ORIGINAL_NOTE_COURSE_ID, mOriginalNoteCourseId);
+        //Save Note title
+        outState.putString(ORIGINAL_NOTE_TITLE, mOriginalNoteTitle);
+        //save Note text
+        outState.putString(ORIGINAL_NOTE_TEXT, mOriginalNoteText);
+    }
+
     //Store note's previous values
     private void storePreviousNotesValues() {
         CourseInfo course = DataManager.getInstance().getCourse(mOriginalNoteCourseId);
