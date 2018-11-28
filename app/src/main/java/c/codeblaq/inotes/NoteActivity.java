@@ -2,7 +2,6 @@ package c.codeblaq.inotes;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.os.PersistableBundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
@@ -15,13 +14,14 @@ import android.widget.Spinner;
 import java.util.List;
 
 public class NoteActivity extends AppCompatActivity {
+    public static final String ORIGINAL_NOTE_TEXT = "c.codeblaq.inotes.ORIGINAL_NOTE_TEXT";
 
     //Constant for NoteInfo extra (use package name to make it unique)
     public static final String NOTE_POSITION = "c.codeblaq.inotes.NOTE_POSITION";
    /*Constant values for original note states */
     public static final String ORIGINAL_NOTE_COURSE_ID = "c.codeblaq.inotes.ORIGINAL_NOTE_COURSE_ID";
     public static final String ORIGINAL_NOTE_TITLE = "c.codeblaq.inotes.ORIGINAL_NOTE_TITLE";
-    public static final String ORIGINAL_NOTE_TEXT = "c.codeblaq.inoes.ORIGINAL_NOTE_TEXT";
+    private final String TAG = getClass().getSimpleName();
 
     public static final int POSITION_NOT_SET = -1;
 
@@ -40,7 +40,7 @@ public class NoteActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_note);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
         //Instantiate spinner
@@ -171,19 +171,19 @@ public class NoteActivity extends AppCompatActivity {
         //get int position
 
         /*The param "POSITION_NOT_SET =-1" */
-//  When using value types and not reference types for intent extras, two params need to be provided. If a reference type was used, it could easily return null but for a value type, this needs to be specified if there's no extra with the specified name
-        int position = intent.getIntExtra(NOTE_POSITION, POSITION_NOT_SET);
+//  When using value types and not reference types for intent extras, two params need to be provided.
+// If a reference type was used, it could easily return null but for a value type, this needs to be
+// specified if there's no extra with the specified name
+        mNotePosition = intent.getIntExtra(NOTE_POSITION, POSITION_NOT_SET);
 
         //Check if a new note is being created based on the availability of a position value
-        mIsNewNote = position == POSITION_NOT_SET;
+        mIsNewNote = mNotePosition == POSITION_NOT_SET;
         if (mIsNewNote) { //New note created
             createNewNote();
-
-        }else {
+        }
             //Note has a position already (not a new note)
             //Get Data Manager Instance to provide content at given positions
-            mNote = DataManager.getInstance().getNotes().get(position);
-        }
+        mNote = DataManager.getInstance().getNotes().get(mNotePosition);
     }
     /*Method for handling creation of new notes */
     private void createNewNote() {
@@ -191,7 +191,7 @@ public class NoteActivity extends AppCompatActivity {
         //Call Data Manager's "createNewNote" feature and get position
         mNotePosition = dm.createNewNote();
         //Get note at position and assign to "mNote"
-        mNote = dm.getNotes().get(mNotePosition);
+//        mNote = dm.getNotes().get(mNotePosition);
     }
 
     @Override
