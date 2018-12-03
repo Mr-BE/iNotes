@@ -220,9 +220,37 @@ public class NoteActivity extends AppCompatActivity {
             mIsCancelling = true;
             //end operations
             finish();
+        } else if (id == R.id.action_next) {
+            moveNext();
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    /*Alter menu item in runtime*/
+    @Override
+    public boolean onPrepareOptionsMenu(Menu menu) {
+        MenuItem item = menu.findItem(R.id.action_next);
+        //create index of last note
+        int lastNoteIndex = DataManager.getInstance().getNotes().size() - 1;
+        item.setEnabled(mNotePosition < lastNoteIndex);//Confirm that note is last
+        return super.onPrepareOptionsMenu(menu);
+    }
+
+    /*Move over to next note*/
+    private void moveNext() {
+        //Save changes to the previous note
+        saveNote();
+        //increment position
+        ++mNotePosition;
+        //get corresponding note at position
+        mNote = DataManager.getInstance().getNotes().get(mNotePosition);
+        //Show original values if changes were made
+        saveOriginalNoteValues();
+        //display note at new position
+        displayNote(mSpinnerCourses, mTextNoteTitle, mTextNoteText);
+        //Call on onPrepareOptionsMenu
+        invalidateOptionsMenu();
     }
 
     //Send a mail via implicit intent
