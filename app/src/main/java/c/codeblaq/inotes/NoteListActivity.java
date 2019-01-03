@@ -55,7 +55,7 @@ public class NoteListActivity extends AppCompatActivity {
         //Get notes to be displayed within recycler view
         List<NoteInfo> notes = DataManager.getInstance().getNotes();
         //Create instance of NoteRecyclerAdapter
-        mNoteRecyclerAdapter = new NoteRecyclerAdapter(this, notes);
+        mNoteRecyclerAdapter = new NoteRecyclerAdapter(this, null);
         //Associate adapter with recycler view
         recyclerNotes.setAdapter(mNoteRecyclerAdapter);
     }

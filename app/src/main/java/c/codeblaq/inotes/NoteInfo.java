@@ -24,6 +24,7 @@ public final class NoteInfo implements Parcelable {
                     return new NoteInfo[size];
                 }
             };
+    private int mId;
     private CourseInfo mCourse;
     private String mTitle;
     private String mText;
@@ -35,6 +36,20 @@ public final class NoteInfo implements Parcelable {
         mText = text;
     }
 
+    public NoteInfo(int id, CourseInfo course, String title, String text) {
+        mId = id;
+        mCourse = course;
+        mTitle = title;
+        mText = text;
+    }
+
+    public int getId() {
+        return mId;
+    }
+
+    public void setId(int id) {
+        mId = id;
+    }
 
     //Constructor for parcel
     //Read variables in the same order they were instantiated

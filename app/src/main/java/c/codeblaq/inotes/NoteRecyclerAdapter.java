@@ -2,6 +2,7 @@ package c.codeblaq.inotes;
 
 import android.content.Context;
 import android.content.Intent;
+import android.database.Cursor;
 import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
@@ -9,23 +10,47 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-import java.util.List;
+import c.codeblaq.inotes.NoteDatabaseContract.NoteInfoEntry;
 
 public class NoteRecyclerAdapter extends RecyclerView.Adapter<NoteRecyclerAdapter.ViewHolder> {
     //Context for Activity
     private final Context mContext;
     private final LayoutInflater mLayoutInflater;
-    //list for notes
-    private final List<NoteInfo> mNotes;
+    //cursor having list for notes
+    private Cursor mCursor;
+    private int mCoursePos;
+    private int mNoteTitlePos;
+    private int mIdPos;
 
     /**
      * NoteRecyclerAdapter class constructor
      */
-    public NoteRecyclerAdapter(Context context, List<NoteInfo> notes) {
+    public NoteRecyclerAdapter(Context context, Cursor cursor) {
         mContext = context;
-        mNotes = notes;
+        mCursor = cursor;
         //Layout inflater to get views from context
         mLayoutInflater = LayoutInflater.from(mContext);
+        populateColumnPosition();
+    }
+
+    private void populateColumnPosition() {
+        //Check if cursor is null
+        if (mCursor == null)
+            return;
+        //Get Column indexes from cursor
+        mCoursePos = mCursor.getColumnIndex(NoteInfoEntry.COLUMN_COURSE_ID);
+        mNoteTitlePos = mCursor.getColumnIndex(NoteInfoEntry.COLUMN_NOTE_TITLE);
+        mIdPos = mCursor.getColumnIndex(NoteInfoEntry._ID);
+    }
+
+    public void changeCursor(Cursor cursor) {
+        if (mCursor != null) //Cursor exists
+            mCursor.close();
+        mCursor = cursor;
+        populateColumnPosition(); //ensure that new cursor has required columns
+        notifyDataSetChanged();//Inform recycler view that data has changed
+
+
     }
 
     @NonNull
@@ -38,21 +63,26 @@ public class NoteRecyclerAdapter extends RecyclerView.Adapter<NoteRecyclerAdapte
         return new ViewHolder(itemView);
     }
 
-    /*Bind data to views*/
+    /*Display data at specific positions*/
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        //Get note corresponding to position
-        NoteInfo note = mNotes.get(position);
+        //move cursor to right row
+        mCursor.moveToPosition(position);
+        //Get values at position
+        String course = mCursor.getString(mCoursePos);
+        String noteTitle = mCursor.getString(mNoteTitlePos);
+        int id = mCursor.getInt(mIdPos);
+
         //Get each Text Views from viewholder
-        holder.mTextCourses.setText(note.getCourse().getTitle());
-        holder.mTextTitle.setText(note.getTitle());
-        holder.mCurrentPosition = position;
+        holder.mTextCourses.setText(course);
+        holder.mTextTitle.setText(noteTitle);
+        holder.mId = id;
     }
 
     /*Determine the number of items in the list*/
     @Override
     public int getItemCount() {
-        return mNotes.size();
+        return mCursor == null ? 0 : mCursor.getCount();
     }
 
     /**
@@ -63,7 +93,7 @@ public class NoteRecyclerAdapter extends RecyclerView.Adapter<NoteRecyclerAdapte
         public final TextView mTextCourses;
         public final TextView mTextTitle;
         //Viewholder position
-        public int mCurrentPosition;
+        public int mId;
 
         public ViewHolder(View itemView) {
             super(itemView);
@@ -78,7 +108,7 @@ public class NoteRecyclerAdapter extends RecyclerView.Adapter<NoteRecyclerAdapte
                     //intent for clicking on note views
                     Intent intent = new Intent(mContext, NoteActivity.class);
                     //put position as intent extra
-                    intent.putExtra(NoteActivity.NOTE_POSITION, mCurrentPosition);
+                    intent.putExtra(NoteActivity.NOTE_ID, mId);
                     mContext.startActivity(intent);
                 }
             });
