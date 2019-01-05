@@ -28,6 +28,7 @@ import android.widget.TextView;
 
 import java.util.List;
 
+import c.codeblaq.inotes.NoteDatabaseContract.CourseInfoEntry;
 import c.codeblaq.inotes.NoteDatabaseContract.NoteInfoEntry;
 
 import static c.codeblaq.inotes.NoteActivity.LOADER_NOTES;
@@ -279,14 +280,21 @@ public class MainActivity extends AppCompatActivity
                 public Cursor loadInBackground() {
                     SQLiteDatabase db = mDbOpenHelper.getReadableDatabase();
                     final String[] noteColumns = {
-                            NoteInfoEntry._ID,
+                            //Qualify table that appear in both tables
+                            NoteInfoEntry.getQName(NoteInfoEntry._ID),
                             NoteInfoEntry.COLUMN_NOTE_TITLE,
-                            NoteInfoEntry.COLUMN_COURSE_ID
+                            CourseInfoEntry.COLUMN_COURSE_TITLE
                     };
-                    final String noteOrderBy = NoteInfoEntry.COLUMN_COURSE_ID +
+                    //Sort data
+                    final String noteOrderBy = CourseInfoEntry.COLUMN_COURSE_TITLE +
                             "," + NoteInfoEntry.COLUMN_NOTE_TITLE;
 
-                    return db.query(NoteInfoEntry.TABLE_NAME, noteColumns,
+                    //NoteInfo JOIN CourseInfo ON note_info.course_id =
+                    String tablesWithJoin = NoteInfoEntry.TABLE_NAME + " JOIN " +
+                            CourseInfoEntry.TABLE_NAME + " ON " +
+                            NoteInfoEntry.getQName(NoteInfoEntry.COLUMN_COURSE_ID) + " =" +
+                            CourseInfoEntry.getQName(CourseInfoEntry.COLUMN_COURSE_ID);
+                    return db.query(tablesWithJoin, noteColumns,
                             null, null, null, null, noteOrderBy);
                 }
             };
