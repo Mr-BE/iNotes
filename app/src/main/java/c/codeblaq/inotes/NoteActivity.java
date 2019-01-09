@@ -2,14 +2,17 @@ package c.codeblaq.inotes;
 
 import android.annotation.SuppressLint;
 import android.app.LoaderManager;
+import android.content.ContentValues;
 import android.content.CursorLoader;
 import android.content.Intent;
 import android.content.Loader;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.EditText;
@@ -179,15 +182,35 @@ public class NoteActivity extends AppCompatActivity
     protected void onPause() {
         super.onPause();
         if (mIsCancelling){//User cancelling created note
+            Log.i(TAG, "Cancelling note at position: " + mNoteId);
+
             //Get DataManager instance and remove note if new note
             if(mIsNewNote) {
-                DataManager.getInstance().removeNote(mNoteId);
+                deleteNoteFromDatabase();
             } else {
 //                storePreviousNotesValues();
             }
         } else {
-//            saveNote();
+            saveNote();
         }
+    }
+
+    private void deleteNoteFromDatabase() {
+        // selection params
+        final String selection = NoteInfoEntry._ID + " = ?";
+        final String[] selectionArgs = {Integer.toString(mNoteId)};
+
+        //Setup helper AsyncTask Anon class
+        @SuppressLint("StaticFieldLeak") AsyncTask task = new AsyncTask() {
+            @Override
+            protected Object doInBackground(Object[] objects) {
+                SQLiteDatabase db = mDbOpenHelper.getWritableDatabase();
+                db.delete(NoteInfoEntry.TABLE_NAME, selection, selectionArgs);
+                return null;
+            }
+        };
+        task.execute();
+
     }
 
     /*Make sure cancelled state is saved*/
@@ -210,14 +233,46 @@ public class NoteActivity extends AppCompatActivity
         mNote.setText(mOriginalNoteText);
     }
 
+    //Save note on db
+    private void saveNoteToDatabase(String courseId, String noteTitle, String noteText) {
+        String selection = NoteInfoEntry._ID + " = ?";
+        String[] selectionArgs = {Integer.toString(mNoteId)};
+
+        ContentValues values = new ContentValues();
+        values.put(NoteInfoEntry.COLUMN_COURSE_ID, courseId);
+        values.put(NoteInfoEntry.COLUMN_NOTE_TITLE, noteTitle);
+        values.put(NoteInfoEntry.COLUMN_NOTE_TEXT, noteText);
+
+        //Get db connection
+        SQLiteDatabase db = mDbOpenHelper.getWritableDatabase();
+        //update values
+        db.update(NoteInfoEntry.TABLE_NAME, values, selection, selectionArgs);
+    }
+
     //Save note input
     private void saveNote() {
-        //Set course value to what is in spinner
-        mNote.setCourse((CourseInfo) mSpinnerCourses.getSelectedItem());
-        //Get value of note title and set to title field
-        mNote.setTitle(mTextNoteTitle.getText().toString());
+        //Get course value in spinner from cursor
+        String courseId = selectedCourseId();
+        //Get value of note title
+        String noteTitle = mTextNoteTitle.getText().toString();
         //Get value of note text and set to title field
-        mNote.setText(mTextNoteText.getText().toString());
+        String noteText = mTextNoteText.getText().toString();
+
+        saveNoteToDatabase(courseId, noteTitle, noteText);
+    }
+
+    private String selectedCourseId() {
+        //Check current spinner position
+        int selectedPosition = mSpinnerCourses.getSelectedItemPosition();
+        //Get cursor reference
+        Cursor cursor = mAdapterCourses.getCursor();
+        cursor.moveToPosition(selectedPosition);
+        //Find index with selected course id
+        int courseIdPos = cursor.getColumnIndex(CourseInfoEntry.COLUMN_COURSE_ID);
+        String courseId = cursor.getString(courseIdPos);
+        return courseId;
+
+
     }
 
     /**
@@ -283,11 +338,17 @@ public class NoteActivity extends AppCompatActivity
     }
     /*Method for handling creation of new notes */
     private void createNewNote() {
-        DataManager dm = DataManager.getInstance(); //Local instance of DataManager
-        //Call Data Manager's "createNewNote" feature and get position
-        mNoteId = dm.createNewNote();
-        //Get note at position and assign to "mNote"
-        mNote = dm.getNotes().get(mNoteId);
+        //Values to be put in new row in db table
+        ContentValues values = new ContentValues();
+        //Set up placeholder values
+        values.put(NoteInfoEntry.COLUMN_COURSE_ID, "");
+        values.put(NoteInfoEntry.COLUMN_NOTE_TITLE, "");
+        values.put(NoteInfoEntry.COLUMN_NOTE_TEXT, "");
+        //db link
+        SQLiteDatabase db = mDbOpenHelper.getWritableDatabase();
+        //Get id of newly created row
+        mNoteId = (int) db.insert(NoteInfoEntry.TABLE_NAME, null, values); //Insert values
+
     }
 
     @Override
