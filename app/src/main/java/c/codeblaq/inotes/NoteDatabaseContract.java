@@ -38,7 +38,7 @@ public final class NoteDatabaseContract {
         public static final String COLUMN_COURSE_ID = "course_id";
 
         //Create Note Index
-        public static final String INDEX1 = "_index1"; //value for index
+        public static final String INDEX1 = "_index"; //value for index
         public static final String SQL_CREATE_INDEX1 =
                 "CREATE INDEX " + INDEX1 + " ON " + TABLE_NAME +
                         "(" + COLUMN_NOTE_TITLE + ")";

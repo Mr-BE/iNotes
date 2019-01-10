@@ -8,6 +8,7 @@ import android.content.Intent;
 import android.content.Loader;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
@@ -21,6 +22,7 @@ import android.widget.Spinner;
 
 import c.codeblaq.inotes.NoteDatabaseContract.CourseInfoEntry;
 import c.codeblaq.inotes.NoteDatabaseContract.NoteInfoEntry;
+import c.codeblaq.inotes.NoteProviderContract.Courses;
 
 public class NoteActivity extends AppCompatActivity
         implements LoaderManager.LoaderCallbacks<Cursor> {
@@ -445,23 +447,19 @@ public class NoteActivity extends AppCompatActivity
     private CursorLoader createLoaderCourses() { //Populate spinner with courses list from query
         //Boolean flag
         mCourseQueryFinished = false;
-
-        //Create new instance of cursor loader and return
-        return new CursorLoader(this) {
-            @Override
-            public Cursor loadInBackground() {
-                //Create connection to db
-                SQLiteDatabase db = mDbOpenHelper.getReadableDatabase();
-                //Get data columns
-                String[] courseColumns = {
-                        CourseInfoEntry.COLUMN_COURSE_TITLE,
-                        CourseInfoEntry.COLUMN_COURSE_ID,
-                        CourseInfoEntry._ID
-                };
-                return db.query(CourseInfoEntry.TABLE_NAME, courseColumns,
-                        null, null, null, null, CourseInfoEntry.COLUMN_COURSE_TITLE);
-            }
+        //Get Uri for content provider
+        Uri uri = Courses.CONTENT_URI;
+        //Get data columns
+        String[] courseColumns = {
+                Courses.COLUMN_COURSE_TITLE,
+                Courses.COLUMN_COURSE_ID,
+                Courses._ID
         };
+
+        //Create instance of cursor loader
+        return new CursorLoader(this, uri, courseColumns,
+                null, null, Courses.COLUMN_COURSE_TITLE);
+
     }
 
     @SuppressLint("StaticFieldLeak")
