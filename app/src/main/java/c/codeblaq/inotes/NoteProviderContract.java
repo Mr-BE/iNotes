@@ -25,7 +25,7 @@ public final class NoteProviderContract {//
     //Note column interface
     protected interface NotesColumns {
         String COLUMN_NOTE_TITLE = "note_title";
-        String COLUMNN_NOTE_TEXT = "note_text";
+        String COLUMN_NOTE_TEXT = "note_text";
     }
 
     //nested class for courses

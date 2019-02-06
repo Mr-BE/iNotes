@@ -1,6 +1,8 @@
 package c.codeblaq.inotes;
 
 import android.content.ContentProvider;
+import android.content.ContentResolver;
+import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.UriMatcher;
 import android.database.Cursor;
@@ -18,8 +20,11 @@ public class iNotesProvider extends ContentProvider {
     public static final int COURSES = 0;
     public static final int NOTES = 1;
     public static final int NOTES_EXPANDED = 2;
+    public static final String MIME_VENDOR_TYPE = "vnd." + NoteProviderContract.AUTHORITY + ".";
     //Create URI matcher (NO_MATCH == attempt to access void of authority)
     private static UriMatcher sUriMatcher = new UriMatcher(UriMatcher.NO_MATCH);
+
+    public static final int NOTES_ROW = 3;
 
     //initialize static field
     static {
@@ -29,6 +34,8 @@ public class iNotesProvider extends ContentProvider {
         sUriMatcher.addURI(NoteProviderContract.AUTHORITY, Notes.PATH, NOTES);
         //expanded notes
         sUriMatcher.addURI(NoteProviderContract.AUTHORITY, Notes.PATH_EXPANDED, NOTES_EXPANDED);
+        //note row id (specific URI)
+        sUriMatcher.addURI(NoteProviderContract.AUTHORITY, Notes.PATH + "/#", NOTES_ROW);
     }
 
     //Set dbOpenHelper to connect to DB
@@ -44,16 +51,52 @@ public class iNotesProvider extends ContentProvider {
     }
 
     @Override
-    public String getType(Uri uri) {
-        // TODO: Implement this to handle requests for the MIME type of the data
-        // at the given URI.
-        throw new UnsupportedOperationException("Not yet implemented");
+    public String getType(Uri uri) { //Handle MIME type requests
+        String mimeType = null;
+
+        int uriMatch = sUriMatcher.match(uri);
+        switch (uriMatch) {
+            case COURSES: // vnd.android.cursor.dir/vnd.c.codeblaq.inotes.provider.courses
+                mimeType = ContentResolver.CURSOR_DIR_BASE_TYPE + "/" + MIME_VENDOR_TYPE + Courses.PATH;
+                break;
+            case NOTES:
+                mimeType = ContentResolver.CURSOR_DIR_BASE_TYPE + "/" + MIME_VENDOR_TYPE + Notes.PATH;
+                break;
+            case NOTES_EXPANDED:
+                mimeType = ContentResolver.CURSOR_DIR_BASE_TYPE + "/" + MIME_VENDOR_TYPE + Notes.PATH_EXPANDED;
+                break;
+            case NOTES_ROW:
+                mimeType = ContentResolver.CURSOR_ITEM_BASE_TYPE + "/" + MIME_VENDOR_TYPE + Notes.PATH;
+        }
+
+        return mimeType;
+
     }
 
     @Override
     public Uri insert(Uri uri, ContentValues values) {
-        // TODO: Implement this to handle requests to insert a new row.
-        throw new UnsupportedOperationException("Not yet implemented");
+        //Get db ref
+        SQLiteDatabase db = mDbOpenHelper.getWritableDatabase();
+        long rowId = -1; //Row id init
+        Uri rowUri = null; //Row uri init
+        int uriMatch = sUriMatcher.match(uri);
+        //Determine uri value
+        switch (uriMatch) {
+            case NOTES://insert values into db table and store id
+                rowId = db.insert(NoteInfoEntry.TABLE_NAME, null, values);
+                //content://c.codeblaq.inotes.provider/notes/1
+                rowUri = ContentUris.withAppendedId(Notes.CONTENT_URI, rowId);
+                break;
+            case COURSES:
+                rowId = db.insert(CourseInfoEntry.TABLE_NAME, null, values);
+                rowUri = ContentUris.withAppendedId(Courses.CONTENT_URI, rowId);
+                break;
+            case NOTES_EXPANDED:
+                //throws exception that it is a read only table
+                break;
+        }
+
+        return rowUri;
     }
 
     @Override
@@ -85,6 +128,15 @@ public class iNotesProvider extends ContentProvider {
                 break;
             case NOTES_EXPANDED:
                 cursor = notesExpandedQuery(db, projection, selection, selectionArgs, sortOrder);
+                break;
+            case NOTES_ROW:
+                long rowId = ContentUris.parseId(uri); //Get specific row Id from URI
+                //Selection criteria
+                String rowSelection = NoteInfoEntry._ID + " = ?"; //clause
+                String[] rowSelectionArgs = new String[]{Long.toString(rowId)};
+                cursor = db.query(NoteInfoEntry.TABLE_NAME, projection, rowSelection,
+                        rowSelectionArgs, null, null, null);
+                break;
         }
 
         return cursor;
