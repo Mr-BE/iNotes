@@ -42,6 +42,7 @@ public class NoteListActivity extends AppCompatActivity {
         mNoteRecyclerAdapter.notifyDataSetChanged();
     }
 
+
     //Display content list
     private void initializeDisplayContent() {
 
