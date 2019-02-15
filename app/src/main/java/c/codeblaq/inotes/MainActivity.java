@@ -9,6 +9,7 @@ import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
+import android.os.StrictMode;
 import android.preference.PreferenceManager;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
@@ -54,6 +55,10 @@ public class MainActivity extends AppCompatActivity
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
+        //strict mode thread policy
+        enableStrictMode();
+
+
         //OpenHelper instance
         mDbOpenHelper = new NoteOpenHelper(this);
 
@@ -87,6 +92,19 @@ public class MainActivity extends AppCompatActivity
 
         //Set up display
         initializeDisplayContent();
+    }
+
+    //Set up strict mode thread policy
+    private void enableStrictMode() {
+        if (BuildConfig.DEBUG) {//Works on debug app build only
+            StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder()
+                    .detectAll() //detect
+                    .penaltyLog() //set penalty
+                    .build();
+            StrictMode.setThreadPolicy(policy);
+
+        }
+
     }
 
     //Called when app is resumed

@@ -14,12 +14,15 @@ import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.RequiresApi;
+import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.EditText;
+import android.widget.ProgressBar;
 import android.widget.SimpleCursorAdapter;
 import android.widget.Spinner;
 
@@ -75,6 +78,7 @@ public class NoteActivity extends AppCompatActivity
         setContentView(R.layout.activity_note);
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+        Log.d(TAG, "*******onCreate*******");
 
         mDbOpenHelper = new NoteOpenHelper(this);
 
@@ -200,6 +204,8 @@ public class NoteActivity extends AppCompatActivity
         } else {
             saveNote();
         }
+        Log.d(TAG, "***********onPause**********");
+
     }
 
     private void deleteNoteFromDatabase() {
@@ -245,13 +251,30 @@ public class NoteActivity extends AppCompatActivity
         String selection = NoteInfoEntry._ID + " = ?";
         String[] selectionArgs = {Integer.toString(mNoteId)};
 
+        //Set up async task
+        @SuppressLint("StaticFieldLeak") AsyncTask<ContentValues, Void, Integer> task = new AsyncTask<ContentValues, Void, Integer>() {
+            @Override
+            protected Integer doInBackground(ContentValues... params) {
+                ContentValues savedValues = params[0];
+                return null;
+            }
+
+            @Override
+            protected void onPostExecute(Integer integer) {
+                super.onPostExecute(integer);
+            }
+        };
+
+
         ContentValues values = new ContentValues();
         values.put(NoteInfoEntry.COLUMN_COURSE_ID, courseId);
         values.put(NoteInfoEntry.COLUMN_NOTE_TITLE, noteTitle);
         values.put(NoteInfoEntry.COLUMN_NOTE_TEXT, noteText);
 
+        //TODO: Set up Async Task
         //Get db connection
         SQLiteDatabase db = mDbOpenHelper.getWritableDatabase();
+
         //update values
         db.update(NoteInfoEntry.TABLE_NAME, values, selection, selectionArgs);
     }
@@ -345,6 +368,68 @@ public class NoteActivity extends AppCompatActivity
     }
     /*Method for handling creation of new notes */
     private void createNewNote() {
+        //Set up async task
+        @SuppressLint("StaticFieldLeak") AsyncTask<ContentValues, Integer, Uri> task = new AsyncTask<ContentValues, Integer, Uri>() {
+            //Progress bar
+            private ProgressBar mProgressBar;
+
+
+            @Override
+            protected void onPreExecute() {
+                mProgressBar = findViewById(R.id.progress_bar);
+                mProgressBar.setVisibility(View.VISIBLE);
+                mProgressBar.setProgress(1);
+            }
+
+            @Override
+            protected Uri doInBackground(ContentValues... params) {
+                Log.d(TAG, "doInBackground - thread: " + Thread.currentThread().getId());
+
+                ContentValues insertValues = params[0];
+                //Reference content resolver and set to a Uri variable
+                Uri rowUri = getContentResolver().insert(Notes.CONTENT_URI, insertValues);
+
+                simulateTask();
+                publishProgress(2);
+
+                simulateTask();
+
+                publishProgress(3);
+
+                return rowUri;
+            }
+
+            @Override
+            protected void onProgressUpdate(Integer... values) {
+                int progressValue = values[0];
+                mProgressBar.setProgress(progressValue);
+            }
+
+            private void simulateTask() {
+                try {
+                    Thread.currentThread();
+                    Thread.sleep(3000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            @Override
+            protected void onPostExecute(Uri uri) {
+                Log.d(TAG, "onPostExecute - thread: " + Thread.currentThread().getId());
+                //Set received rowUri to mUri field
+                mNoteUri = uri;
+                displaySnackBar(mNoteUri.toString());
+                mProgressBar.setVisibility(View.GONE);
+            }
+
+            private void displaySnackBar(String st) {
+                View view = findViewById(R.id.relativeLayout);
+                Snackbar.make(view, st, Snackbar.LENGTH_SHORT).show();
+
+            }
+        };
+
         //Values to be put in new row in db table
         ContentValues values = new ContentValues();
         //Set up placeholder values
@@ -352,9 +437,8 @@ public class NoteActivity extends AppCompatActivity
         values.put(Notes.COLUMN_NOTE_TITLE, "");
         values.put(Notes.COLUMN_NOTE_TEXT, "");
 
-        //Reference content resolver and set to a Uri variable
-        mNoteUri = getContentResolver().insert(Notes.CONTENT_URI, values);
-
+        Log.d(TAG, "Call to execute - thread: " + Thread.currentThread().getId());
+        task.execute(values);
     }
 
     @Override
