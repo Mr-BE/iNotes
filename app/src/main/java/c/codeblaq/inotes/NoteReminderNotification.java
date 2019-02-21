@@ -70,6 +70,11 @@ public class NoteReminderNotification {
         // TODO: Remove this if your notification has no relevant thumbnail.
         final Bitmap picture = BitmapFactory.decodeResource(res, R.drawable.andel);
 
+        //Backup service intent
+        Intent backupServiceIntent = new Intent(context, NoteBackupService.class);
+        backupServiceIntent.putExtra(NoteBackupService.EXTRA_COURSE_ID, NoteBackup.ALL_COURSES);
+
+
         final NotificationCompat.Builder builder = new NotificationCompat.Builder(context, idChannel)
 
                 // Set appropriate defaults for the notification light, sound,
@@ -127,6 +132,15 @@ public class NoteReminderNotification {
                                 context,
                                 0,
                                 new Intent(context, MainActivity.class),
+                                PendingIntent.FLAG_UPDATE_CURRENT))
+                //Backup notes notification pending intent
+                .addAction(
+                        0,// no icon
+                        "Backup notes",
+                        PendingIntent.getService(
+                                context,
+                                0,
+                                backupServiceIntent,
                                 PendingIntent.FLAG_UPDATE_CURRENT))
                 // Automatically dismiss the notification when it is touched.
                 .setAutoCancel(true);

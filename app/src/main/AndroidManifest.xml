@@ -13,6 +13,10 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
         tools:ignore="GoogleAppIndexingWarning">
+        <service
+            android:name=".NoteBackupService"
+            android:exported="false"></service>
+
         <activity
             android:name=".NoteActivity"
             android:label="@string/title_activity_note"

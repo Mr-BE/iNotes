@@ -9,6 +9,8 @@ import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.os.StrictMode;
 import android.preference.PreferenceManager;
 import android.support.design.widget.FloatingActionButton;
@@ -22,6 +24,7 @@ import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
+import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -115,6 +118,22 @@ public class MainActivity extends AppCompatActivity
         getLoaderManager().restartLoader(LOADER_NOTES, null, this);
         //Update nav details
         updateNavHeader();
+        //Open Nav drawer on start
+        openDrawer();
+
+    }
+
+    private void openDrawer() {
+        Handler handler = new Handler(Looper.getMainLooper()); //Handler(Looper.getMainLooper) explicitly associates looper with main thread
+        handler.postDelayed(new Runnable() { //postDelayed or post
+            @Override
+            public void run() {
+                DrawerLayout drawerLayout = findViewById(R.id.drawer_layout);
+                drawerLayout.openDrawer(Gravity.START);
+            }
+        }, 1000);
+
+
     }
 
     private void loadNotes() {
@@ -240,10 +259,19 @@ public class MainActivity extends AppCompatActivity
         if (id == R.id.action_settings) {
             startActivity(new Intent(this, SettingsActivity.class));
             return true;
-
+        } else if (id == R.id.action_backup) {
+            backupNotes();
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    //Backup notes
+    private void backupNotes() {
+        //Set up service
+        Intent intent = new Intent(this, NoteBackupService.class);
+        intent.putExtra(NoteBackupService.EXTRA_COURSE_ID, NoteBackup.ALL_COURSES);
+        startService(intent);
     }
 
     @SuppressWarnings("StatementWithEmptyBody")
