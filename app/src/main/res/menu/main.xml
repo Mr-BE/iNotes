@@ -7,6 +7,9 @@
         android:title="@string/action_settings"
         app:showAsAction="never" />
     <item
+        android:id="@+id/action_upload_notes"
+        android:title="Upload notes" />
+    <item
         android:id="@+id/action_backup"
         android:title="Backup notes"
         app:showAsAction="never" />

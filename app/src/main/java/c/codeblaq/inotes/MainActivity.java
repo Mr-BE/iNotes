@@ -2,6 +2,9 @@ package c.codeblaq.inotes;
 
 import android.annotation.SuppressLint;
 import android.app.LoaderManager;
+import android.app.job.JobInfo;
+import android.app.job.JobScheduler;
+import android.content.ComponentName;
 import android.content.CursorLoader;
 import android.content.Intent;
 import android.content.Loader;
@@ -11,6 +14,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.PersistableBundle;
 import android.os.StrictMode;
 import android.preference.PreferenceManager;
 import android.support.design.widget.FloatingActionButton;
@@ -49,6 +53,7 @@ public class MainActivity extends AppCompatActivity
     private GridLayoutManager mCoursesLayoutManager;
 
     private NoteOpenHelper mDbOpenHelper;
+    private int NOTE_UPLOADER_JOB_ID = 1;
 
 
     @Override
@@ -261,9 +266,29 @@ public class MainActivity extends AppCompatActivity
             return true;
         } else if (id == R.id.action_backup) {
             backupNotes();
+        } else if (id == R.id.action_upload_notes) {
+            scheduleNoteUpload();
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    private void scheduleNoteUpload() {
+        //Associate extras to jobinfo
+        PersistableBundle extras = new PersistableBundle();
+        extras.putString(NoteUploaderJobService.EXTRA_DATA_URI, Notes.CONTENT_URI.toString());
+
+        //Build job information with component handling job (first)
+        ComponentName componentName = new ComponentName(this, NoteUploaderJobService.class);
+
+        JobInfo jobInfo = new JobInfo.Builder(NOTE_UPLOADER_JOB_ID, componentName)// Int value and description
+                .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
+                .setExtras(extras)
+                .build();
+        //Build job
+        JobScheduler jobScheduler = (JobScheduler) getSystemService(JOB_SCHEDULER_SERVICE);
+        jobScheduler.schedule(jobInfo);
+
     }
 
     //Backup notes
